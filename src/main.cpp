@@ -177,4 +177,10 @@ void renderPlot(const std::string& outPath, const std::vector<int>& ns,
     const int padL = 90;
     const int padR = 40;
     const int padT = 60;
-    const int padB = 90
+    const int padB = 90;
+
+    int plotW = width - padL - padR;
+    int plotH = height - padT - padB;
+
+    // Находим максимальное значение Y для масштабирования
+    double maxY = 0;
