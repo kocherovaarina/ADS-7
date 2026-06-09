@@ -7,6 +7,8 @@
 #include <string>
 #include <algorithm>
 #include <utility>
+#include <cstdint>
+#include <cstdlib>
 
 #include "train.h"
 
@@ -14,7 +16,7 @@
 const int N_MIN = 2;
 const int N_MAX = 80;
 const int RANDOM_TRIALS = 20;
-const unsigned long RANDOM_SEED = 42L;
+const uint64_t RANDOM_SEED = 42ULL;
 
 // Generate range of numbers
 std::vector<int> range(int from, int toInclusive) {
@@ -25,10 +27,14 @@ std::vector<int> range(int from, int toInclusive) {
     return result;
 }
 
+// Forward declaration
+std::vector<double> solve3(const std::vector<std::vector<double>>& m,
+                           const std::vector<double>& v);
+
 // Measure number of operations
 double measure(int n, bool allOff, bool allOn, std::mt19937& rng,
                int trials) {
-    long long int sum = 0;
+    int64_t sum = 0;
     for (int t = 0; t < trials; ++t) {
         Train train;
         for (int i = 0; i < n; ++i) {
@@ -228,9 +234,11 @@ int main() {
     std::cout << "Starting computational experiment...\n";
 
     // Create result directory if it doesn't exist
-    system("mkdir -p result");
+    if (system("mkdir -p result") == -1) {
+        std::cerr << "Warning: Could not create result directory\n";
+    }
 
-    std::mt19937 rng(RANDOM_SEED);
+    std::mt19937 rng(static_cast<unsigned int>(RANDOM_SEED));
     std::vector<int> ns = range(N_MIN, N_MAX);
     std::vector<double> offMeasurements, onMeasurements, randomMeasurements;
 
