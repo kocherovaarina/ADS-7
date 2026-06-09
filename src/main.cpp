@@ -47,12 +47,11 @@ double measure(int n, bool allOff, bool allOn, std::mt19937& rng,
                 train.addCar(dist(rng) == 1);
             }
         }
-        int len = train.getLength();  // Сохраняем результат
-        int ops = train.getOpCount();  // Сохраняем результат
+        int len = train.getLength();
+        int ops = train.getOpCount();
         sum += ops;
-        // Можно добавить проверку
         if (len != n) {
-            std::cerr << "Warning: length mismatch! Expected " 
+            std::cerr << "Warning: length mismatch! Expected "
                       << n << ", got " << len << std::endl;
         }
     }
