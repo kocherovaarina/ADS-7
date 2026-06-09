@@ -5,24 +5,26 @@
 #include <random>
 #include <cmath>
 #include <filesystem>
+#include <string>
+#include <utility>
 #include <SFML/Graphics.hpp>
 
 #include "train.h"
 
 namespace fs = std::filesystem;
 
-// Константы
+// Constants
 const int N_MIN = 2;
 const int N_MAX = 80;
 const int RANDOM_TRIALS = 20;
 const unsigned long RANDOM_SEED = 42L;
 
-// Цвета (RGB)
+// Colors (RGB)
 const sf::Color COLOR_OFF(46, 134, 193);
 const sf::Color COLOR_ON(231, 76, 60);
 const sf::Color COLOR_RANDOM(39, 174, 96);
 
-// Генерация диапазона чисел
+// Generate range of numbers
 std::vector<int> range(int from, int toInclusive) {
     std::vector<int> result;
     for (int i = from; i <= toInclusive; ++i) {
@@ -31,9 +33,10 @@ std::vector<int> range(int from, int toInclusive) {
     return result;
 }
 
-// Измерение количества операций
-double measure(int n, bool allOff, bool allOn, std::mt19937& rng, int trials) {
-    long long sum = 0;
+// Measure number of operations
+double measure(int n, bool allOff, bool allOn, std::mt19937& rng,
+               int trials) {
+    long long int sum = 0;
     for (int t = 0; t < trials; ++t) {
         Train train;
         for (int i = 0; i < n; ++i) {
@@ -52,8 +55,9 @@ double measure(int n, bool allOff, bool allOn, std::mt19937& rng, int trials) {
     return static_cast<double>(sum) / trials;
 }
 
-// Линейный тренд (y = a*x + b)
-std::vector<double> linearTrend(const std::vector<int>& x, const std::vector<double>& y) {
+// Linear trend (y = a*x + b)
+std::vector<double> linearTrend(const std::vector<int>& x,
+                                const std::vector<double>& y) {
     int n = x.size();
     double sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
 
@@ -75,8 +79,9 @@ std::vector<double> linearTrend(const std::vector<int>& x, const std::vector<dou
     return trend;
 }
 
-// Квадратичный тренд (y = a*x^2 + b*x + c)
-std::vector<double> quadraticTrend(const std::vector<int>& x, const std::vector<double>& y) {
+// Quadratic trend (y = a*x^2 + b*x + c)
+std::vector<double> quadraticTrend(const std::vector<int>& x,
+                                   const std::vector<double>& y) {
     int n = x.size();
     double s0 = n, s1 = 0, s2 = 0, s3 = 0, s4 = 0;
     double t0 = 0, t1 = 0, t2 = 0;
@@ -94,8 +99,10 @@ std::vector<double> quadraticTrend(const std::vector<int>& x, const std::vector<
         t2 += xi2 * yi;
     }
 
-    // Решение системы уравнений 3×3 методом Гаусса
-    std::vector<std::vector<double>> m = {{s0, s1, s2}, {s1, s2, s3}, {s2, s3, s4}};
+    // Solve 3x3 system using Gaussian elimination
+    std::vector<std::vector<double>> m = {{s0, s1, s2},
+                                           {s1, s2, s3},
+                                           {s2, s3, s4}};
     std::vector<double> v = {t0, t1, t2};
     std::vector<double> coeff = solve3(m, v);
 
@@ -108,8 +115,9 @@ std::vector<double> quadraticTrend(const std::vector<int>& x, const std::vector<
     return trend;
 }
 
-// Решение системы 3×3
-std::vector<double> solve3(std::vector<std::vector<double>>& m, std::vector<double>& v) {
+// Solve 3x3 system
+std::vector<double> solve3(std::vector<std::vector<double>>& m,
+                           std::vector<double>& v) {
     const int n = 3;
     std::vector<std::vector<double>> a(n, std::vector<double>(n + 1));
 
@@ -132,7 +140,8 @@ std::vector<double> solve3(std::vector<std::vector<double>>& m, std::vector<doub
 
         double div = a[col][col];
         if (std::abs(div) < 1e-12) {
-            throw std::runtime_error("Singular matrix in quadratic fit");
+            throw std::runtime_error(
+                "Singular matrix in quadratic fit");
         }
 
         for (int j = col; j <= n; ++j) {
@@ -151,10 +160,11 @@ std::vector<double> solve3(std::vector<std::vector<double>>& m, std::vector<doub
     return {a[0][n], a[1][n], a[2][n]};
 }
 
-// Запись в CSV
+// Write to CSV
 void writeCsv(const std::string& path, const std::vector<int>& ns,
-             const std::vector<double>& off, const std::vector<double>& on,
-             const std::vector<double>& random) {
+              const std::vector<double>& off,
+              const std::vector<double>& on,
+              const std::vector<double>& random) {
     std::ofstream file(path);
     file << "n,all_off,all_on,random_avg\n";
     for (size_t i = 0; i < ns.size(); ++i) {
@@ -165,9 +175,10 @@ void writeCsv(const std::string& path, const std::vector<int>& ns,
     }
 }
 
-// Отрисовка графика
+// Render plot
 void renderPlot(const std::string& outPath, const std::vector<int>& ns,
-                const std::vector<double>& off, const std::vector<double>& on,
+                const std::vector<double>& off,
+                const std::vector<double>& on,
                 const std::vector<double>& random,
                 const std::vector<double>& trendOff,
                 const std::vector<double>& trendOn,
@@ -182,5 +193,18 @@ void renderPlot(const std::string& outPath, const std::vector<int>& ns,
     int plotW = width - padL - padR;
     int plotH = height - padT - padB;
 
-    // Находим максимальное значение Y для масштабирования
+    // Find maximum Y value for scaling
     double maxY = 0;
+    for (size_t i = 0; i < ns.size(); ++i) {
+        maxY = std::max(maxY, off[i]);
+        maxY = std::max(maxY, on[i]);
+        maxY = std::max(maxY, random[i]);
+        maxY = std::max(maxY, trendOff[i]);
+        maxY = std::max(maxY, trendOn[i]);
+        maxY = std::max(maxY, trendRandom[i]);
+    }
+
+    
+
+    // Note: The plot is saved in the 'result' folder
+}
