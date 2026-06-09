@@ -47,8 +47,14 @@ double measure(int n, bool allOff, bool allOn, std::mt19937& rng,
                 train.addCar(dist(rng) == 1);
             }
         }
-        train.getLength();
-        sum += train.getOpCount();
+        int len = train.getLength();  // Сохраняем результат
+        int ops = train.getOpCount();  // Сохраняем результат
+        sum += ops;
+        // Можно добавить проверку
+        if (len != n) {
+            std::cerr << "Warning: length mismatch! Expected " 
+                      << n << ", got " << len << std::endl;
+        }
     }
     return static_cast<double>(sum) / trials;
 }
@@ -164,6 +170,10 @@ void writeCsv(const std::string& path, const std::vector<int>& ns,
               const std::vector<double>& on,
               const std::vector<double>& random) {
     std::ofstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Error: Cannot open " << path << std::endl;
+        return;
+    }
     file << "n,all_off,all_on,random_avg\n";
     for (size_t i = 0; i < ns.size(); ++i) {
         file << ns[i] << ','
@@ -173,7 +183,7 @@ void writeCsv(const std::string& path, const std::vector<int>& ns,
     }
 }
 
-// Save plot as simple text file (since SFML is not available)
+// Save plot data
 void savePlotData(const std::string& outPath, const std::vector<int>& ns,
                   const std::vector<double>& off,
                   const std::vector<double>& on,
@@ -182,6 +192,10 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
                   const std::vector<double>& trendOn,
                   const std::vector<double>& trendRandom) {
     std::ofstream file(outPath);
+    if (!file.is_open()) {
+        std::cerr << "Error: Cannot open " << outPath << std::endl;
+        return;
+    }
     file << "# Train Length vs Operations Plot Data\n";
     file << "# Format: n all_off all_on random_avg ";
     file << "trend_off trend_on trend_random\n";
@@ -198,7 +212,6 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
 
     file << "\n# Trend lines formulas:\n";
 
-    // Calculate and save trend formulas
     int n = ns.size();
     double sumX = 0, sumYOff = 0, sumYOn = 0, sumYRandom = 0;
     double sumXX = 0, sumXYOff = 0, sumXYOn = 0, sumXYRandom = 0;
@@ -215,25 +228,25 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
     }
 
     double denom = n * sumXX - sumX * sumX;
-    double aOff = (n * sumXYOff - sumX * sumYOff) / denom;
-    double bOff = (sumYOff - aOff * sumX) / n;
+    if (std::abs(denom) > 1e-12) {
+        double aOff = (n * sumXYOff - sumX * sumYOff) / denom;
+        double bOff = (sumYOff - aOff * sumX) / n;
+        double aOn = (n * sumXYOn - sumX * sumYOn) / denom;
+        double bOn = (sumYOn - aOn * sumX) / n;
+        double aRandom = (n * sumXYRandom - sumX * sumYRandom) / denom;
+        double bRandom = (sumYRandom - aRandom * sumX) / n;
 
-    double aOn = (n * sumXYOn - sumX * sumYOn) / denom;
-    double bOn = (sumYOn - aOn * sumX) / n;
-
-    double aRandom = (n * sumXYRandom - sumX * sumYRandom) / denom;
-    double bRandom = (sumYRandom - aRandom * sumX) / n;
-
-    file << "\n# Linear trends:\n";
-    file << "# all_off: y = " << aOff << " * x + " << bOff << "\n";
-    file << "# all_on: y = " << aOn << " * x + " << bOn << "\n";
-    file << "# random: y = " << aRandom << " * x + " << bRandom << "\n";
+        file << "\n# Linear trends:\n";
+        file << "# all_off: y = " << aOff << " * x + " << bOff << "\n";
+        file << "# all_on: y = " << aOn << " * x + " << bOn << "\n";
+        file << "# random: y = " << aRandom << " * x + " << bRandom << "\n";
+    }
 }
 
 int main() {
     std::cout << "Starting computational experiment...\n";
 
-    // Create result directory if it doesn't exist
+    // Create result directory
     if (system("mkdir -p result") == -1) {
         std::cerr << "Warning: Could not create result directory\n";
     }
@@ -245,7 +258,7 @@ int main() {
     std::cout << "Measuring for different train lengths...\n";
 
     for (int n : ns) {
-        std::cout << "  n = " << n << "... ";
+        std::cout << "  n = " << n << "... " << std::flush;
 
         double offAvg = measure(n, true, false, rng, 1);
         double onAvg = measure(n, false, true, rng, 1);
@@ -278,8 +291,8 @@ int main() {
     std::cout << "Results saved to:\n";
     std::cout << "  - result/data.csv\n";
     std::cout << "  - result/plot.txt\n";
-    std::cout << "\nTo generate a plot, use gnuplot or Python ";
-    std::cout << "with the data files.\n";
+    std::cout << "\nTo generate a plot, use gnuplot or Python "
+              << "with the data files.\n";
 
     return 0;
 }
