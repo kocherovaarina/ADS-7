@@ -16,11 +16,6 @@ const int N_MAX = 80;
 const int RANDOM_TRIALS = 20;
 const unsigned long RANDOM_SEED = 42L;
 
-// Colors (RGB) - for potential future use
-// const int COLOR_OFF[] = {46, 134, 193};
-// const int COLOR_ON[] = {231, 76, 60};
-// const int COLOR_RANDOM[] = {39, 174, 96};
-
 // Generate range of numbers
 std::vector<int> range(int from, int toInclusive) {
     std::vector<int> result;
@@ -182,8 +177,9 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
                   const std::vector<double>& trendRandom) {
     std::ofstream file(outPath);
     file << "# Train Length vs Operations Plot Data\n";
-    file << "# Format: n all_off all_on random_avg trend_off trend_on trend_random\n";
-    
+    file << "# Format: n all_off all_on random_avg ";
+    file << "trend_off trend_on trend_random\n";
+
     for (size_t i = 0; i < ns.size(); ++i) {
         file << ns[i] << " "
              << off[i] << " "
@@ -193,14 +189,14 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
              << trendOn[i] << " "
              << trendRandom[i] << "\n";
     }
-    
+
     file << "\n# Trend lines formulas:\n";
-    
+
     // Calculate and save trend formulas
     int n = ns.size();
     double sumX = 0, sumYOff = 0, sumYOn = 0, sumYRandom = 0;
     double sumXX = 0, sumXYOff = 0, sumXYOn = 0, sumXYRandom = 0;
-    
+
     for (int i = 0; i < n; ++i) {
         sumX += ns[i];
         sumYOff += off[i];
@@ -211,17 +207,17 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
         sumXYOn += static_cast<double>(ns[i]) * on[i];
         sumXYRandom += static_cast<double>(ns[i]) * random[i];
     }
-    
+
     double denom = n * sumXX - sumX * sumX;
     double aOff = (n * sumXYOff - sumX * sumYOff) / denom;
     double bOff = (sumYOff - aOff * sumX) / n;
-    
+
     double aOn = (n * sumXYOn - sumX * sumYOn) / denom;
     double bOn = (sumYOn - aOn * sumX) / n;
-    
+
     double aRandom = (n * sumXYRandom - sumX * sumYRandom) / denom;
     double bRandom = (sumYRandom - aRandom * sumX) / n;
-    
+
     file << "\n# Linear trends:\n";
     file << "# all_off: y = " << aOff << " * x + " << bOff << "\n";
     file << "# all_on: y = " << aOn << " * x + " << bOn << "\n";
@@ -230,50 +226,52 @@ void savePlotData(const std::string& outPath, const std::vector<int>& ns,
 
 int main() {
     std::cout << "Starting computational experiment...\n";
-    
+
     // Create result directory if it doesn't exist
     system("mkdir -p result");
-    
+
     std::mt19937 rng(RANDOM_SEED);
     std::vector<int> ns = range(N_MIN, N_MAX);
     std::vector<double> offMeasurements, onMeasurements, randomMeasurements;
-    
+
     std::cout << "Measuring for different train lengths...\n";
-    
+
     for (int n : ns) {
         std::cout << "  n = " << n << "... ";
-        
+
         double offAvg = measure(n, true, false, rng, 1);
         double onAvg = measure(n, false, true, rng, 1);
         double randomAvg = measure(n, false, false, rng, RANDOM_TRIALS);
-        
+
         offMeasurements.push_back(offAvg);
         onMeasurements.push_back(onAvg);
         randomMeasurements.push_back(randomAvg);
-        
-        std::cout << "done (off=" << offAvg 
-                  << ", on=" << onAvg 
+
+        std::cout << "done (off=" << offAvg
+                  << ", on=" << onAvg
                   << ", random=" << randomAvg << ")\n";
     }
-    
+
     std::cout << "\nCalculating trends...\n";
-    
+
     std::vector<double> trendOff = linearTrend(ns, offMeasurements);
     std::vector<double> trendOn = linearTrend(ns, onMeasurements);
     std::vector<double> trendRandom = linearTrend(ns, randomMeasurements);
-    
+
     std::cout << "Saving CSV data...\n";
-    writeCsv("result/data.csv", ns, offMeasurements, onMeasurements, randomMeasurements);
-    
+    writeCsv("result/data.csv", ns, offMeasurements, onMeasurements,
+             randomMeasurements);
+
     std::cout << "Saving plot data...\n";
-    savePlotData("result/plot.txt", ns, offMeasurements, onMeasurements, 
+    savePlotData("result/plot.txt", ns, offMeasurements, onMeasurements,
                  randomMeasurements, trendOff, trendOn, trendRandom);
-    
+
     std::cout << "\nExperiment completed!\n";
     std::cout << "Results saved to:\n";
     std::cout << "  - result/data.csv\n";
     std::cout << "  - result/plot.txt\n";
-    std::cout << "\nTo generate a plot, use gnuplot or Python with the data files.\n";
-    
+    std::cout << "\nTo generate a plot, use gnuplot or Python ";
+    std::cout << "with the data files.\n";
+
     return 0;
 }
