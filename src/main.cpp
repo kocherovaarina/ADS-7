@@ -205,6 +205,5 @@ void renderPlot(const std::string& outPath, const std::vector<int>& ns,
     }
 
     
-
     // Note: The plot is saved in the 'result' folder
 }
